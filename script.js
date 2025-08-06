@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentScreen = screenHistory.length > 0 ? screenHistory[screenHistory.length - 1] : null;
         if (screenName !== currentScreen) {
             screenHistory.push(screenName);
-            if (screenHistory.length > 10) screenHistory.shift(); // 限制历史记录大小
+            if (screenHistory.length > 10) screenHistory.shift();
         }
 
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -108,22 +108,34 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         if (screenMap[screenName]) screenMap[screenName].classList.remove('hidden');
         if (screenName === 'home') renderCharacterList();
+        
+        // 其他页面的渲染逻辑可以按需添加在这里
+        // 例如：if (screenName === 'myDashboard') { renderDashboard(); }
     };
 
     const goBack = () => {
         if (screenHistory.length > 1) {
-            screenHistory.pop(); // 移除当前屏幕
+            screenHistory.pop();
             const previousScreen = screenHistory[screenHistory.length - 1];
-            showScreen(previousScreen);
+            // 直接显示上一个屏幕，不再次推入历史记录
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            const screenElement = document.getElementById(`${previousScreen}-screen`);
+            if (screenElement) {
+                screenElement.classList.remove('hidden');
+            }
         }
     };
+
+    // --- Batch Delete Mode ---
+    const enterBatchDeleteMode = () => { isBatchDeleteMode = true; dom.homeScreen.classList.add('batch-delete-active'); renderCharacterList(); };
+    const exitBatchDeleteMode = () => { isBatchDeleteMode = false; dom.homeScreen.classList.remove('batch-delete-active'); renderCharacterList(); };
 
     // --- Event Listeners ---
     document.querySelectorAll('.back-button').forEach(btn => {
         btn.addEventListener('click', goBack);
     });
     
-    // --- Draggable FAB & Panel Logic ---
+    // --- Draggable FAB & Panel Logic (FIXED) ---
     let isDragging = false;
     let wasDragged = false;
     let startX, startY;
@@ -132,13 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const onPointerDown = (e) => {
         if (e.target.closest('.panel-button')) return;
-        if (e.button !== 0) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         
         isDragging = true;
         wasDragged = false;
         
-        startX = e.clientX || e.touches[0].clientX;
-        startY = e.clientY || e.touches[0].clientY;
+        const currentPointer = e.touches ? e.touches[0] : e;
+        startX = currentPointer.clientX;
+        startY = currentPointer.clientY;
         
         const fabRect = dom.fabWrapper.getBoundingClientRect();
         const containerRect = dom.phoneContainer.getBoundingClientRect();
@@ -150,18 +163,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.addEventListener('pointermove', onPointerMove, { passive: false });
         window.addEventListener('pointerup', onPointerUp);
-        window.addEventListener('touchmove', onPointerMove, { passive: false });
-        window.addEventListener('touchend', onPointerUp);
     };
 
     const onPointerMove = (e) => {
         if (!isDragging) return;
         e.preventDefault();
 
-        const currentX = e.clientX || e.touches[0].clientX;
-        const currentY = e.clientY || e.touches[0].clientY;
-        const dx = currentX - startX;
-        const dy = currentY - startY;
+        const currentPointer = e.touches ? e.touches[0] : e;
+        const dx = currentPointer.clientX - startX;
+        const dy = currentPointer.clientY - startY;
 
         if (!wasDragged && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
             wasDragged = true;
@@ -192,8 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.fabWrapper.classList.remove('dragging');
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
-        window.removeEventListener('touchmove', onPointerMove);
-        window.removeEventListener('touchend', onPointerUp);
 
         if (wasDragged) {
             const containerWidth = dom.phoneContainer.clientWidth;
@@ -214,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     dom.fabWrapper.addEventListener('pointerdown', onPointerDown);
-    dom.fabWrapper.addEventListener('touchstart', onPointerDown, { passive: false });
 
     dom.fabPanelContainer.addEventListener('click', (e) => {
         const button = e.target.closest('.panel-button');
@@ -234,11 +241,46 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.fabPanelContainer.classList.add('hidden');
     });
 
+    // Other listeners (Home Screen)
+    dom.menuBtn.addEventListener('click', (e) => { e.stopPropagation(); dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'none'; });
+    dom.dropdownMenu.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'batch-delete') enterBatchDeleteMode();
+        dom.dropdownMenu.style.display = 'none';
+    });
+    document.body.addEventListener('click', () => { if(dom.dropdownMenu.style.display === 'block') dom.dropdownMenu.style.display = 'none'; });
+    dom.addCharacterBtn.addEventListener('click', () => {
+        const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
+        characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
+    });
+    dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
+    dom.deleteSelectedBtn.addEventListener('click', () => {
+        const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
+        if (selectedCheckboxes.length === 0) { alert('请至少选择一个要删除的角色。'); return; }
+        if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 个角色吗？`)) {
+            const idsToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
+            characters = characters.filter(char => !idsToDelete.includes(char.id));
+            saveCharacters(); exitBatchDeleteMode();
+        }
+    });
+
+    // Other listeners (Character Detail & Edit)
+    dom.goToChatBtn.addEventListener('click', () => showScreen('chat'));
+    dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
+    dom.characterEditForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // ... form submission logic ...
+        showScreen('characterDetail');
+    });
+
     // --- Initial Load ---
     const initialSetup = () => {
         loadCharacters();
-        // ... Load other settings ...
-        showScreen('home'); // 默认进入角色列表页
+        // ... any other loading functions ...
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const startScreen = urlParams.get('start');
+        showScreen(startScreen || 'home'); 
     };
 
     initialSetup();
