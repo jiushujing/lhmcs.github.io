@@ -180,11 +180,13 @@ body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; pa
     bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
     right: 25px;
     z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 56px;
     height: 56px;
+    transition: left 0.3s ease-out, right 0.3s ease-out;
+}
+#fab-container.dragging {
+    transition: none; /* 拖动时移除平滑过渡 */
+    cursor: grabbing;
 }
 #fab-toggle-btn {
     width: 100%;
@@ -196,12 +198,15 @@ body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; pa
     line-height: 1;
     border: 1px solid #eee;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    cursor: pointer;
+    cursor: grab;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, color 0.3s;
-    z-index: 2; /* 确保在按钮之上 */
+    z-index: 2;
+}
+#fab-container.dragging #fab-toggle-btn {
+    cursor: grabbing;
 }
 #fab-container.active #fab-toggle-btn {
     transform: rotate(360deg);
@@ -210,13 +215,14 @@ body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; pa
 }
 #fab-menu {
     position: absolute;
+    top: 0; left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* 默认菜单不响应点击 */
+    pointer-events: none;
     transition: all 0.4s ease;
 }
 #fab-container.active #fab-menu {
-    pointer-events: auto; /* 展开后响应点击 */
+    pointer-events: auto;
 }
 .fab-button {
     position: absolute;
@@ -241,13 +247,12 @@ body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; pa
 }
 #fab-container.active .fab-button {
     opacity: 1;
-    /* 180度半圆, 5个按钮, 每个间隔 180/(5-1) = 45度, 从-90度(正上方)开始 */
-    transform: rotate(calc(45deg * var(--i) - 90deg)) translateY(-85px) rotate(calc(-45deg * var(--i) + 90deg));
+    /* 180度左半圆, 5个按钮, 每个间隔 180/(5-1) = 45度, 从-90度(正上方)开始, 逆时针旋转 */
+    transform: rotate(calc(-45deg * var(--i) - 90deg)) translateY(-85px) rotate(calc(45deg * var(--i) + 90deg));
 }
 .fab-button:active {
     transform: scale(1.1);
 }
 #fab-container.active .fab-button:active {
-    /* 保持展开状态下的按压效果 */
-    transform: rotate(calc(45deg * var(--i) - 90deg)) translateY(-85px) rotate(calc(-45deg * var(--i) + 90deg)) scale(1.1);
+    transform: rotate(calc(-45deg * var(--i) - 90deg)) translateY(-85px) rotate(calc(45deg * var(--i) + 90deg)) scale(1.1);
 }
