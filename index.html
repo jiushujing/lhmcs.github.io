@@ -3,25 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欢迎使用 AI Chat</title>
+    <title>欢迎 - AI Chat</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Welcome page specific styles -->
+    <style>
+        body {
+            background-color: #f0f2f5;
+        }
+        .welcome-container {
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            max-width: 350px;
+            margin: 0 20px;
+        }
+        .welcome-container h1 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .welcome-container p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .enter-button {
+            display: inline-block;
+            padding: 12px 40px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .enter-button:hover {
+            opacity: 0.9;
+        }
+    </style>
 </head>
-<body class="manual-body">
-
-    <div class="manual-container">
-        <h1>AI Chat 说明书</h1>
-        <div class="manual-content">
-            <p>欢迎来到 AI Chat，一个完全由您掌控的私人 AI 聊天应用。</p>
-            <h3>核心功能：</h3>
-            <ul>
-                <li><strong>💬 聊天核心：</strong> 与你创建的任一AI角色进行对话。</li>
-                <li><strong>🪷 角色中心：</strong> 在这里创建、管理和定义你的 AI 角色。</li>
-                <li><strong>🐱 我的桌面：</strong> 配置全局设定，如个人信息和界面外观。</li>
-                <li><strong>本地存储：</strong> 所有的角色、聊天记录和设置都安全地保存在你的浏览器本地，我们不收集任何数据。</li>
-            </ul>
-            <p>请先通过悬浮球导航至 <strong>[🔌 API设定]</strong> 中配置你的 API Key，然后开始使用。</p>
-        </div>
-        <a href="app.html" class="confirm-button">我已了解，开始使用</a>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+    
+    <div class="welcome-container">
+        <h1>AI Chat</h1>
+        <p>一个简洁的 AI 聊天应用</p>
+        <a href="app.html" class="enter-button">进入应用</a>
     </div>
 
 </body>
