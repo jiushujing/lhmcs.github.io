@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="phone-container">
+        <div id="screen-container">
+            <!-- 首页 (角色列表) -->
+            <div id="home-screen" class="screen">
+                <div class="page-header-bar">
+                    <label class="page-toggle-switch"><input type="checkbox" class="page-toggle-checkbox"><div class="toggle-track"><div class="toggle-thumb"><span>🪷</span></div></div></label>
+                    <h2 id="batch-delete-header">选择项目</h2>
+                    <div class="header-actions">
+                        <button id="add-character-btn" class="header-button">+</button>
+                        <button id="menu-btn" class="header-menu-button"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
+                        <div id="dropdown-menu" class="dropdown-menu">
+                            <a href="index.html" target="_blank" class="dropdown-item">说明书</a>
+                            <div class="dropdown-item" data-action="prompts">提示词</div>
+                            <div class="dropdown-item" data-action="theme">主题美化</div>
+                            <div class="dropdown-item" data-action="batch-delete">批量删除</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="character-list"></div>
+                <div id="batch-delete-footer"><button id="delete-selected-btn" class="action-button btn-danger">删除选中</button><button id="cancel-delete-btn" class="action-button btn-secondary">取消</button></div>
+            </div>
+
+            <!-- 角色详情页 -->
+            <div id="character-detail-screen" class="screen hidden">
+                <div class="page-header-bar"><button class="back-button">←</button></div>
+                <div class="content"><img id="detail-avatar" src="" alt="Avatar"><h3 id="detail-name"></h3>
+                    <div class="btn-group"><button id="go-to-chat-btn" class="action-button btn-primary">与TA聊天</button><button id="go-to-edit-btn" class="action-button btn-secondary">编辑角色设定</button></div>
+                </div>
+            </div>
+
+            <!-- 角色编辑页 -->
+            <div id="character-edit-screen" class="screen hidden">
+                <div class="settings-page">
+                    <div class="page-header-bar"><button class="back-button">←</button><h2>编辑角色</h2></div>
+                    <form id="character-edit-form">
+                        <div class="profile-header"><label for="edit-char-avatar-upload" class="profile-pic-container"><img id="edit-char-avatar" src="" alt="头像"></label><input type="file" id="edit-char-avatar-upload" class="hidden-upload" accept="image/*"><div class="form-group" style="flex-grow: 1; margin-bottom: 0;"><label for="edit-char-name">名字</label><input type="text" id="edit-char-name" placeholder="给角色起个名字"></div></div>
+                        <div class="form-group"><label for="edit-char-subtitle">简介</label><input type="text" id="edit-char-subtitle" placeholder="一句话描述角色"></div>
+                        <div class="form-group"><label for="edit-char-setting">AI 系统设定 (System Prompt)</label><textarea id="edit-char-setting" placeholder="定义角色的性格、背景、说话方式等"></textarea></div>
+                        <div class="btn-group"><button type="submit" class="action-button btn-primary">保存</button><button type="button" id="delete-character-btn" class="action-button btn-danger">删除角色</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 聊天界面 -->
+            <div id="chat-screen" class="screen hidden">
+                <div class="page-header-bar"><button class="back-button">←</button><h2 id="chat-header-title"></h2></div>
+                <div id="chat-history"></div>
+                <form id="chat-form"><input type="text" id="chat-input" placeholder="输入消息..." autocomplete="off"><button type="submit" id="send-button">➤</button></form>
+            </div>
+
+            <!-- “我的”桌面 (API等全局设定) -->
+            <div id="my-dashboard-screen" class="screen hidden" data-bg-target="dashboard">
+                <div class="page-header-bar"><label class="page-toggle-switch"><input type="checkbox" class="page-toggle-checkbox"><div class="toggle-track"><div class="toggle-thumb"><span>🪷</span></div></div></label></div>
+                <div id="icon-grid" class="icon-grid">
+                    <button id="icon-profile" class="icon-widget"><div class="profile-capsule-content"><img id="dashboard-profile-pic" src="" alt=""><span id="dashboard-user-name">我的设定</span></div></button>
+                    <div id="icon-background" class="icon-widget"><div class="bg-widget-container"><div class="bg-widget-top" data-bg-target="widgetBgTop"></div><div class="bg-widget-bottom"><div class="bg-widget-bottom-left" data-bg-target="widgetBgBottomLeft"></div><div class="bg-widget-bottom-right" data-bg-target="widgetBgBottomRight"></div></div></div></div>
+                    <button id="icon-api" class="icon-widget"><div class="api-widget-content"><div class="api-inner-circle" data-bg-target="apiInnerCircle">
+                        
+                    </div></div></button>
+                    <button id="icon-music" class="icon-widget"><div class="music-disc"><div class="music-label" data-bg-target="musicDiscLabel"></div></div></button>
+                    <div id="icon-sliders" class="icon-widget">
+                        <div class="slider-group">
+                            <input type="text" id="label-opacity" class="editable-widget-label slider" data-label-key="opacity" spellcheck="false">
+                            <input type="range" id="opacity-slider" min="0.1" max="1" step="0.05">
+                        </div>
+                        <div class="slider-group">
+                            <input type="text" id="label-brightness" class="editable-widget-label slider" data-label-key="brightness" spellcheck="false">
+                            <input type="range" id="brightness-slider" min="0" max="100" step="1">
+                        </div>
+                    </div>
+                    <div id="icon-entertainment" class="icon-widget">
+                        <div class="entertainment-grid">
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon1"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon2"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon3"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon4"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon5"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon6"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon7"></div>
+                            <div class="entertainment-swatch" data-bg-target="entertainmentIcon8"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Settings Screen -->
+            <div id="profile-settings-screen" class="screen hidden">
+                <div class="settings-page">
+                    <div class="page-header-bar"><button class="back-button">←</button><h2>我的设定</h2></div>
+                    <form id="profile-form">
+                        <div class="profile-header">
+                            <label for="profile-pic-upload" class="profile-pic-container"><img id="profile-pic" src="" alt="头像"></label>
+                            <input type="file" id="profile-pic-upload" class="hidden-upload" accept="image/*">
+                            <div class="form-group" style="flex-grow: 1; margin-bottom: 0;"><label for="user-name">我的名字</label><input type="text" id="user-name" placeholder="起个名字吧"></div>
+                        </div>
+                        <div class="form-group"><label for="user-setting">我的设定</label><textarea id="user-setting" placeholder="关于我，你想让AI知道什么？"></textarea></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- API Settings Screen -->
+            <div id="api-settings-screen" class="screen hidden">
+                <div class="settings-page">
+                    <div class="page-header-bar"><button class="back-button">←</button><h2>API 设定</h2></div>
+                    <form id="api-settings-form">
+                        <div class="api-presets">
+                            <button type="button" id="btn-openai" class="preset-button">切换兼容OpenAI</button>
+                            <button type="button" id="btn-gemini" class="preset-button">切换Gemini Key</button>
+                        </div>
+                        <div class="form-group"><label for="api-url">API 地址 (Base URL)</label><input type="text" id="api-url" placeholder="格式参考https://example.com"></div>
+                        <div class="form-group"><label for="api-key">密钥 (API Key)</label><input type="password" id="api-key" placeholder="请输入API Key"></div>
+                        <div class="form-group"><label for="model-select">选择模型</label><select id="model-select"><optgroup id="openai-models" label="OpenAI / 兼容"></optgroup><optgroup id="gemini-models" label="Google Gemini"></optgroup></select></div>
+                        <button type="button" id="fetch-models-button" class="action-button btn-secondary">拉取模型</button>
+                        <div class="btn-group"><button type="submit" class="action-button btn-primary">保存API设定</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Background Settings Screen (Redesigned) -->
+            <div id="background-settings-screen" class="screen hidden">
+                <div class="settings-page">
+                    <div class="page-header-bar"><button class="back-button">←</button><h2>背景设定</h2></div>
+                    <div class="bg-settings-redesigned">
+                        <div class="bg-card">
+                            <h3 class="bg-card-title">🐱 桌面</h3>
+                            <label for="upload-dashboard" class="bg-preview-label desktop">
+                                <img class="bg-preview-img" data-preview-key="dashboard" src="">
+                            </label>
+                            <input type="file" id="upload-dashboard" class="hidden-upload" data-upload-key="dashboard" accept="image/*">
+                            <input type="text" class="bg-url-input" placeholder="或在此处填写图片 URL" data-url-key="dashboard">
+                            <input type="text" class="bg-url-input" placeholder="模糊度 (0-20)" data-blur-key="dashboard">
+                        </div>
+                        <div class="bg-card">
+                            <div class="widget-group">
+                                <h3 class="bg-card-title">方形组件</h3>
+                                <div class="widget-container">
+                                    <div class="widget-item">
+                                        <label for="upload-widgetBgTop" class="bg-preview-label rect"><img class="bg-preview-img" data-preview-key="widgetBgTop" src=""></label>
+                                        <input type="file" id="upload-widgetBgTop" class="hidden-upload" data-upload-key="widgetBgTop" accept="image/*">
+                                        <input type="text" class="bg-url-input small" placeholder="URL" data-url-key="widgetBgTop">
+                                    </div>
+                                    <div class="widget-item">
+                                        <label for="upload-widgetBgBottomLeft" class="bg-preview-label square"><img class="bg-preview-img" data-preview-key="widgetBgBottomLeft" src=""></label>
+                                        <input type="file" id="upload-widgetBgBottomLeft" class="hidden-upload" data-upload-key="widgetBgBottomLeft" accept="image/*">
+                                        <input type="text" class="bg-url-input small" placeholder="URL" data-url-key="widgetBgBottomLeft">
+                                    </div>
+                                    <div class="widget-item">
+                                        <label for="upload-widgetBgBottomRight" class="bg-preview-label square"><img class="bg-preview-img" data-preview-key="widgetBgBottomRight" src=""></label>
+                                        <input type="file" id="upload-widgetBgBottomRight" class="hidden-upload" data-upload-key="widgetBgBottomRight" accept="image/*">
+                                        <input type="text" class="bg-url-input small" placeholder="URL" data-url-key="widgetBgBottomRight">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="widget-group">
+                                 <div class="widget-container">
+                                    <div class="widget-item circle">
+                                        <h3 class="bg-card-title">唱片</h3>
+                                        <label for="upload-musicDiscLabel" class="bg-preview-label circle-outer"><div class="circle-inner"><img class="bg-preview-img" data-preview-key="musicDiscLabel" src=""></div></label>
+                                        <input type="file" id="upload-musicDiscLabel" class="hidden-upload" data-upload-key="musicDiscLabel" accept="image/*">
+                                        <input type="text" class="bg-url-input" placeholder="URL" data-url-key="musicDiscLabel">
+                                    </div>
+                                    <div class="widget-item circle">
+                                        <h3 class="bg-card-title">API</h3>
+                                        <label for="upload-apiInnerCircle" class="bg-preview-label api-circle"><img class="bg-preview-img" data-preview-key="apiInnerCircle" src=""></label>
+                                        <input type="file" id="upload-apiInnerCircle" class="hidden-upload" data-upload-key="apiInnerCircle" accept="image/*">
+                                        <input type="text" class="bg-url-input" placeholder="URL" data-url-key="apiInnerCircle">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card">
+                            <h3 class="bg-card-title">娱乐组件</h3>
+                            <div class="entertainment-grid-new">
+                                <!-- JavaScript will generate 8 items here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
