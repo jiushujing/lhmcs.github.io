@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.addEventListener('click', () => { 
                     activeCharacterId = char.id; 
                     sessionStorage.setItem('activeCharacterId', activeCharacterId);
-                    showScreen('chat'); // 修改：选择角色后直接进入聊天
+                    showScreen('characterDetail'); 
                 });
             }
             item.innerHTML = content;
@@ -125,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBatchDeleteMode && screenName !== 'home') exitBatchDeleteMode();
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         
-        // 预处理
         if (screenName === 'characterDetail' && activeCharacterId) {
             const char = characters.find(c => c.id === activeCharacterId);
             dom.detailAvatar.src = char.avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -136,9 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.editCharName.value = char.name;
             dom.editCharSubtitle.value = char.subtitle || '';
             dom.editCharSetting.value = char.setting;
-        } else if (screenName === 'chat' && activeCharacterId) {
+        } else if (screenName === 'chat') {
             const char = characters.find(c => c.id === activeCharacterId);
-            dom.chatHeaderTitle.textContent = char.name;
+            dom.chatHeaderTitle.textContent = char ? char.name : '与 AI 聊天';
             renderChatHistory();
         }
 
@@ -156,40 +155,113 @@ document.addEventListener('DOMContentLoaded', () => {
     const enterBatchDeleteMode = () => { isBatchDeleteMode = true; dom.homeScreen.classList.add('batch-delete-active'); renderCharacterList(); };
     const exitBatchDeleteMode = () => { isBatchDeleteMode = false; dom.homeScreen.classList.remove('batch-delete-active'); renderCharacterList(); };
 
-    // --- Background Settings Logic (未改变) ---
-    // ... 此处省略未改变的背景设置代码 ...
+    // --- Background Settings Logic ---
+    let backgrounds = {};
+    const generateEntertainmentItems = () => {
+        const container = document.querySelector('.entertainment-grid-new');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 1; i <= 8; i++) {
+            const key = `entertainmentIcon${i}`;
+            container.innerHTML += `<div class="entertainment-item"><label for="upload-${key}" class="bg-preview-label"><img class="bg-preview-img" data-preview-key="${key}" src=""></label><input type="file" id="upload-${key}" class="hidden-upload" data-upload-key="${key}" accept="image/*"><input type="text" class="bg-url-input small" placeholder="URL" data-url-key="${key}"></div>`;
+        }
+    };
+    const applyAllBackgrounds = () => {
+        document.querySelectorAll('[data-bg-target]').forEach(el => { el.style.backgroundImage = ''; });
+        document.querySelectorAll('img[data-preview-key]').forEach(el => { el.src = ''; });
+        document.querySelectorAll('input[data-url-key]').forEach(el => { el.value = ''; });
+        const blurInput = document.querySelector('input[data-blur-key="dashboard"]');
+        if (blurInput) blurInput.value = '';
 
-    // --- Editable Label Settings (未改变) ---
-    // ... 此处省略未改变的标签设置代码 ...
+        Object.keys(backgrounds).forEach(key => {
+            const config = backgrounds[key];
+            if (!config) return;
+            const targetElements = document.querySelectorAll(`[data-bg-target="${key}"]`);
+            targetElements.forEach(targetElement => { if (targetElement) { targetElement.style.backgroundImage = config.url ? `url(${config.url})` : ''; } });
+            const previewImg = document.querySelector(`img[data-preview-key="${key}"]`);
+            if (previewImg) previewImg.src = config.url || '';
+            const urlInput = document.querySelector(`input[data-url-key="${key}"]`);
+            if (urlInput) urlInput.value = config.url || '';
+            if (key === 'dashboard') {
+                const blurValue = config.blur || 0;
+                if (blurInput) blurInput.value = blurValue;
+                let beforeStyle = document.getElementById('dashboard-blur-style');
+                if (!beforeStyle) { beforeStyle = document.createElement('style'); beforeStyle.id = 'dashboard-blur-style'; document.head.appendChild(beforeStyle); }
+                beforeStyle.textContent = `#my-dashboard-screen::before { backdrop-filter: blur(${blurValue}px); -webkit-backdrop-filter: blur(${blurValue}px); }`;
+            }
+        });
+    };
+    const saveBackgrounds = () => { localStorage.setItem('aiChatBackgrounds_v3', JSON.stringify(backgrounds)); };
+    const loadBackgrounds = () => {
+        const saved = localStorage.getItem('aiChatBackgrounds_v3');
+        backgrounds = saved ? JSON.parse(saved) : {};
+        if (!backgrounds.apiInnerCircle || !backgrounds.apiInnerCircle.url) {
+            backgrounds.apiInnerCircle = { ...backgrounds.apiInnerCircle, url: 'https://sharkpan.xyz/f/wXeeHq/lantu' };
+        }
+        applyAllBackgrounds();
+    };
+    const updateBackgroundData = (key, newValues) => {
+        backgrounds[key] = { ...(backgrounds[key] || {}), ...newValues };
+        if (!backgrounds[key].url && (!backgrounds[key].blur || backgrounds[key].blur === 0)) { delete backgrounds[key]; }
+        saveBackgrounds();
+        applyAllBackgrounds();
+    };
+    if (dom.backgroundSettingsScreen) {
+        dom.backgroundSettingsScreen.addEventListener('change', (e) => {
+            if (e.target.matches('input[type="file"]')) {
+                const key = e.target.dataset.uploadKey;
+                const file = e.target.files[0];
+                if (!key || !file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => { updateBackgroundData(key, { url: event.target.result }); e.target.value = ''; };
+                reader.readAsDataURL(file);
+            } else if (e.target.matches('input[type="text"]')) {
+                const urlKey = e.target.dataset.urlKey;
+                const blurKey = e.target.dataset.blurKey;
+                if (urlKey) { updateBackgroundData(urlKey, { url: e.target.value.trim() }); }
+                if (blurKey) { const blur = parseInt(e.target.value, 10) || 0; updateBackgroundData(blurKey, { blur: Math.max(0, Math.min(20, blur)) }); }
+            }
+        });
+    }
+
+    // --- Editable Label Settings ---
+    let labelSettings = {};
+    const saveLabelSettings = () => { localStorage.setItem('aiChatLabelSettings', JSON.stringify(labelSettings)); };
+    const loadLabelSettings = () => {
+        const saved = localStorage.getItem('aiChatLabelSettings');
+        const defaults = { opacity: '组件透明度', brightness: '组件黑白度' };
+        labelSettings = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+        Object.keys(labelSettings).forEach(key => {
+            const input = document.getElementById(`label-${key}`);
+            if (input) { input.value = labelSettings[key]; }
+        });
+    };
 
     // --- Event Listeners ---
     document.querySelectorAll('.back-button').forEach(btn => {
         btn.addEventListener('click', () => {
-            const currentScreen = btn.closest('.screen');
-            const mainFabScreens = ['home-screen', 'my-dashboard-screen', 'space-screen', 'api-settings-screen', 'prompts-screen'];
+            const fromScreen = btn.closest('.screen');
+            if (!fromScreen) return;
+            const fromScreenId = fromScreen.id;
 
-            if (mainFabScreens.includes(currentScreen.id)) {
-                // 从5个主功能页返回，都去聊天页
-                showScreen('chat');
-            } else if (currentScreen.id === 'chat-screen') {
-                // 从聊天页返回，去角色列表页，方便切换角色
-                showScreen('home');
-            } else if (currentScreen.id === 'character-edit-screen') {
-                // 从角色编辑页返回，去角色详情页
+            // 子页面的特定返回逻辑
+            if (fromScreenId === 'character-edit-screen') {
                 showScreen('characterDetail');
-            } else if (['profile-settings-screen', 'background-settings-screen'].includes(currentScreen.id)) {
-                // 从“我的”中的子页面返回，回到“我的”桌面
-                showScreen('myDashboard');
-            } else {
-                // 其他情况（如从角色详情页返回），都去角色列表
+            } else if (fromScreenId === 'character-detail-screen') {
                 showScreen('home');
+            } else if (['profile-settings-screen', 'background-settings-screen'].includes(fromScreenId)) {
+                showScreen('myDashboard');
+            }
+            // 主层级页面统一返回到聊天页
+            else {
+                showScreen('chat');
             }
         });
     });
-
+    
     // 悬浮球 (FAB) 交互逻辑
     dom.fabToggleBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 防止点击事件冒泡到body
+        e.stopPropagation();
         dom.fabContainer.classList.toggle('active');
     });
 
@@ -201,15 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 点击页面任何其他地方，收起悬浮球菜单
     document.getElementById('screen-container').addEventListener('click', () => {
         if (dom.fabContainer.classList.contains('active')) {
             dom.fabContainer.classList.remove('active');
         }
     });
 
-
-    // Dashboard Icon Clicks (只保留非导航功能)
+    // Dashboard Icon Clicks
     dom.iconProfile.addEventListener('click', () => showScreen('profileSettings'));
     dom.iconApi.style.cursor = 'default';
     dom.iconMusic.addEventListener('click', () => alert('音乐功能正在开发中！'));
@@ -225,21 +295,296 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ... 此处省略其他未改变的监听器代码 (Editable Label, Menu, Character CRUD, Profile, API, Chat, Widget) ...
+    // Editable Label Listener
+    if (dom.iconGrid) {
+        dom.iconGrid.addEventListener('change', (e) => {
+            if (e.target.matches('.editable-widget-label')) {
+                const key = e.target.dataset.labelKey;
+                if (key) {
+                    labelSettings[key] = e.target.value;
+                    saveLabelSettings();
+                }
+            }
+        });
+    }
+
+    // Other listeners
+    dom.menuBtn.addEventListener('click', (e) => { e.stopPropagation(); dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; });
+    dom.dropdownMenu.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action) {
+            if (action === 'batch-delete') { enterBatchDeleteMode(); }
+            else if (action === 'theme') { showScreen('backgroundSettings'); }
+            else if (action === 'prompts') { showScreen('prompts'); }
+            else { alert(`${e.target.textContent} 功能正在开发中！`); }
+        }
+        dom.dropdownMenu.style.display = 'none';
+    });
+    document.body.addEventListener('click', () => dom.dropdownMenu.style.display = 'none');
+    dom.addCharacterBtn.addEventListener('click', () => {
+        const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
+        characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
+    });
+    dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
+    dom.deleteSelectedBtn.addEventListener('click', () => {
+        const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
+        if (selectedCheckboxes.length === 0) { alert('请至少选择一个要删除的角色。'); return; }
+        if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 个角色吗？`)) {
+            const idsToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
+            characters = characters.filter(char => !idsToDelete.includes(char.id));
+            saveCharacters(); exitBatchDeleteMode();
+        }
+    });
+    dom.goToChatBtn.addEventListener('click', () => showScreen('chat'));
+    dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
+    dom.characterEditForm.addEventListener('submit', (e) => {
+        e.preventDefault(); const char = characters.find(c => c.id === activeCharacterId);
+        if (char) { char.name = dom.editCharName.value; char.subtitle = dom.editCharSubtitle.value; char.setting = dom.editCharSetting.value; char.avatar = dom.editCharAvatar.src; saveCharacters(); }
+        showScreen('characterDetail');
+    });
+    dom.editCharAvatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) { const reader = new FileReader(); reader.onload = (event) => dom.editCharAvatar.src = event.target.result; reader.readAsDataURL(file); }
+    });
+    dom.deleteCharacterBtn.addEventListener('click', () => {
+        if (confirm('确定要删除这个角色吗？此操作无法撤销。')) { characters = characters.filter(c => c.id !== activeCharacterId); saveCharacters(); activeCharacterId = null; showScreen('home'); }
+    });
+
+    // Profile Settings Logic
+    const saveProfileSettings = () => {
+        const profile = { name: dom.userNameInput.value, setting: dom.userSettingInput.value, avatar: dom.profilePic.src };
+        localStorage.setItem('aiChatProfile', JSON.stringify(profile));
+        dom.dashboardUserName.textContent = profile.name || '我的设定';
+        if (profile.avatar) dom.dashboardProfilePic.src = profile.avatar;
+    };
+    const loadProfileSettings = () => {
+        const savedProfile = localStorage.getItem('aiChatProfile');
+        if (savedProfile) {
+            const profile = JSON.parse(savedProfile);
+            dom.userNameInput.value = profile.name || '';
+            dom.userSettingInput.value = profile.setting || '';
+            dom.dashboardUserName.textContent = profile.name || '我的设定';
+            if (profile.avatar && profile.avatar.startsWith('data:image')) {
+                dom.profilePic.src = profile.avatar;
+                dom.dashboardProfilePic.src = profile.avatar;
+            }
+        }
+    };
+    dom.profilePicUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) { const reader = new FileReader(); reader.onload = (event) => { dom.profilePic.src = event.target.result; saveProfileSettings(); }; reader.readAsDataURL(file); }
+    });
+    dom.userNameInput.addEventListener('blur', saveProfileSettings);
+    dom.userSettingInput.addEventListener('blur', saveProfileSettings);
+
+    // API Settings Logic
+    const defaultModels = { openai: { "gpt-3.5-turbo": "GPT-3.5-Turbo" }, gemini: { "gemini-pro": "Gemini Pro" } };
+    const restoreSelection = (modelId) => { if (!modelId) return; const optionExists = Array.from(dom.modelSelect.options).some(opt => opt.value === modelId); if (optionExists) { dom.modelSelect.value = modelId; } };
+    const populateModels = (models, type) => { const group = type === 'openai' ? dom.openaiModelsGroup : dom.geminiModelsGroup; group.innerHTML = ''; for (const [id, name] of Object.entries(models)) { const option = document.createElement('option'); option.value = id; option.textContent = name; group.appendChild(option); } };
+    const fetchModels = async () => {
+        const apiKey = dom.apiKeyInput.value.trim();
+        const previouslySelectedModel = dom.modelSelect.value;
+        dom.fetchModelsButton.textContent = '正在拉取...'; dom.fetchModelsButton.disabled = true;
+        try {
+            if (currentApiType === 'openai') {
+                const baseUrl = dom.apiUrlInput.value.trim();
+                if (!baseUrl || !apiKey) throw new Error('请先填写 API 地址和密钥！');
+                const response = await fetch(`${baseUrl}/v1/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const fetchedModels = data.data.reduce((acc, model) => ({ ...acc, [model.id]: model.id }), {});
+                if (Object.keys(fetchedModels).length === 0) throw new Error("API未返回任何模型");
+                populateModels(fetchedModels, 'openai');
+                if (Object.keys(fetchedModels)[0]) dom.modelSelect.value = Object.keys(fetchedModels)[0];
+            } else {
+                if (!apiKey) throw new Error('请先填写 Gemini API Key！');
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const filteredModels = data.models.filter(m => (m.name.includes('gemini-1.5-pro') || m.name.includes('gemini-1.5-flash')) && m.supportedGenerationMethods.includes('generateContent')).reduce((acc, model) => ({ ...acc, [model.name.split('/').pop()]: model.displayName }), {});
+                if (Object.keys(filteredModels).length === 0) throw new Error("未找到符合条件的Gemini模型");
+                populateModels(filteredModels, 'gemini');
+                if (Object.keys(filteredModels)[0]) dom.modelSelect.value = Object.keys(filteredModels)[0];
+            }
+            restoreSelection(previouslySelectedModel);
+        } catch (error) {
+            alert(`拉取模型失败: ${error.message}\n将恢复为默认列表。`);
+            populateModels(defaultModels[currentApiType], currentApiType);
+        } finally {
+            dom.fetchModelsButton.textContent = '拉取模型'; dom.fetchModelsButton.disabled = false;
+        }
+    };
+    const updateApiForm = (apiType) => {
+        currentApiType = apiType;
+        const settings = JSON.parse(localStorage.getItem('aiChatApiSettings') || '{}');
+        const isGemini = apiType === 'gemini';
+        dom.btnOpenAI.classList.toggle('active', !isGemini); dom.btnGemini.classList.toggle('active', isGemini);
+        dom.openaiModelsGroup.hidden = isGemini; dom.geminiModelsGroup.hidden = !isGemini;
+        dom.apiUrlInput.value = isGemini ? 'https://generativelanguage.googleapis.com/v1beta' : (settings.openaiApiUrl || '');
+        dom.apiKeyInput.value = isGemini ? (settings.geminiApiKey || '') : (settings.openaiApiKey || '');
+        dom.apiUrlInput.placeholder = isGemini ? '' : '格式参考https://example.com';
+        dom.apiKeyInput.placeholder = isGemini ? 'AIzaSy... (Gemini API Key)' : 'sk-xxxxxxxxxx';
+        restoreSelection(settings.model);
+    };
+    const saveApiSettings = () => {
+        let settings = JSON.parse(localStorage.getItem('aiChatApiSettings') || '{}');
+        settings.apiType = currentApiType; settings.model = dom.modelSelect.value;
+        if (currentApiType === 'gemini') {
+            settings.geminiApiKey = dom.apiKeyInput.value.trim();
+        } else {
+            settings.openaiApiUrl = dom.apiUrlInput.value.trim();
+            settings.openaiApiKey = dom.apiKeyInput.value.trim();
+        }
+        localStorage.setItem('aiChatApiSettings', JSON.stringify(settings));
+        alert('API设定已保存！');
+    };
+    const loadApiSettings = () => {
+        populateModels(defaultModels.openai, 'openai'); populateModels(defaultModels.gemini, 'gemini');
+        const settings = JSON.parse(localStorage.getItem('aiChatApiSettings') || '{}');
+        updateApiForm(settings.apiType || 'openai');
+    };
+    dom.btnOpenAI.addEventListener('click', () => updateApiForm('openai'));
+    dom.btnGemini.addEventListener('click', () => updateApiForm('gemini'));
+    dom.apiSettingsForm.addEventListener('submit', (e) => { e.preventDefault(); saveApiSettings(); });
+    dom.fetchModelsButton.addEventListener('click', (e) => { e.preventDefault(); fetchModels(); });
+    dom.apiKeyInput.addEventListener('focus', () => { dom.apiKeyInput.type = 'text'; });
+    dom.apiKeyInput.addEventListener('blur', () => { dom.apiKeyInput.type = 'password'; });
+
+    // Chat Logic
+    const renderChatHistory = () => {
+        dom.chatHistory.innerHTML = '';
+        const char = characters.find(c => c.id === activeCharacterId);
+        if (char && char.history) char.history.forEach(msg => addMessageToHistory(msg.content, msg.role === 'ai' ? 'assistant' : 'user'));
+    };
+    const addMessageToHistory = (text, sender) => {
+        const el = document.createElement('div');
+        el.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+        el.textContent = text;
+        dom.chatHistory.appendChild(el);
+        dom.chatHistory.scrollTop = dom.chatHistory.scrollHeight;
+    };
+    const showTypingIndicator = (show) => {
+        let indicator = dom.chatHistory.querySelector('.typing-indicator');
+        if (show && !indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'message ai-message typing-indicator';
+            indicator.textContent = '...';
+            dom.chatHistory.appendChild(indicator);
+            dom.chatHistory.scrollTop = dom.chatHistory.scrollHeight;
+        } else if (!show && indicator) {
+            indicator.remove();
+        }
+    };
+    dom.chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMessage = dom.chatInput.value.trim();
+        if (!userMessage) return;
+
+        if (!activeCharacterId) {
+            alert('请先通过悬浮球 🪷 选择一个角色开始聊天。');
+            return;
+        }
+
+        const char = characters.find(c => c.id === activeCharacterId);
+        const settings = JSON.parse(localStorage.getItem('aiChatApiSettings') || '{}');
+        const isGemini = settings.apiType === 'gemini';
+        const apiKey = isGemini ? settings.geminiApiKey : settings.openaiApiKey;
+        const apiUrl = isGemini ? 'https://generativelanguage.googleapis.com/v1beta' : settings.openaiApiUrl;
+        if (!apiUrl || !apiKey) { 
+            alert('请先通过悬浮球 🔌 配置 API！');
+            return; 
+        }
+        
+        char.history = char.history || [];
+        addMessageToHistory(userMessage, 'user');
+        char.history.push({ role: 'user', content: userMessage });
+        saveCharacters();
+        dom.chatInput.value = '';
+        showTypingIndicator(true);
+        try {
+            let aiMessage;
+            if (isGemini) {
+                const fullApiUrl = `${apiUrl}/models/${settings.model}:generateContent?key=${apiKey}`;
+                const geminiContents = [{ role: 'user', parts: [{ text: char.setting }] }, { role: 'model', parts: [{ text: "OK" }] }, ...char.history.map(msg => ({ role: msg.role === 'ai' ? 'model' : 'user', parts: [{ text: msg.content }] }))];
+                const response = await fetch(fullApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: geminiContents }) });
+                if (!response.ok) { const err = await response.json(); throw new Error(err.error.message || JSON.stringify(err)); }
+                const data = await response.json();
+                aiMessage = data.candidates[0].content.parts[0].text;
+            } else {
+                const fullApiUrl = `${apiUrl}/v1/chat/completions`;
+                const messagesPayload = [{ role: 'system', content: char.setting }, ...char.history.map(msg => ({ role: msg.role === 'ai' ? 'assistant' : 'user', content: msg.content }))];
+                const response = await fetch(fullApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: settings.model || 'gpt-3.5-turbo', messages: messagesPayload }) });
+                if (!response.ok) { const err = await response.json(); throw new Error(err.error.message || JSON.stringify(err)); }
+                const data = await response.json();
+                aiMessage = data.choices[0].message.content;
+            }
+            addMessageToHistory(aiMessage, 'ai');
+            char.history.push({ role: 'ai', content: aiMessage });
+            saveCharacters();
+        } catch (error) {
+            addMessageToHistory(`出错了: ${error.message}`, 'ai');
+        } finally {
+            showTypingIndicator(false);
+        }
+    });
+
+    // Widget Settings Logic
+    const updateSliderProgress = (slider) => {
+        const min = +slider.min;
+        const max = +slider.max;
+        const val = +slider.value;
+        const percentage = (val - min) * 100 / (max - min);
+        slider.style.setProperty('--progress', `${percentage}%`);
+    };
+    const applyWidgetStyles = (opacity, brightness) => {
+        const root = document.documentElement;
+        root.style.setProperty('--widget-bg-lightness', `${brightness}%`);
+        root.style.setProperty('--widget-bg-alpha', opacity);
+    };
+    const saveWidgetSettings = () => {
+        const settings = {
+            opacity: dom.opacitySlider.value,
+            brightness: dom.brightnessSlider.value,
+        };
+        localStorage.setItem('aiChatWidgetSettings', JSON.stringify(settings));
+    };
+    const loadWidgetSettings = () => {
+        const saved = localStorage.getItem('aiChatWidgetSettings');
+        let settings = { opacity: 0.3, brightness: 0 };
+        if (saved) {
+            settings = { ...settings, ...JSON.parse(saved) };
+        }
+        dom.opacitySlider.value = settings.opacity;
+        dom.brightnessSlider.value = settings.brightness;
+        applyWidgetStyles(settings.opacity, settings.brightness);
+        updateSliderProgress(dom.opacitySlider);
+        updateSliderProgress(dom.brightnessSlider);
+    };
+    const onSliderInput = (event) => {
+        applyWidgetStyles(dom.opacitySlider.value, dom.brightnessSlider.value);
+        updateSliderProgress(event.target);
+    };
+    dom.opacitySlider.addEventListener('input', onSliderInput);
+    dom.opacitySlider.addEventListener('change', saveWidgetSettings);
+    dom.brightnessSlider.addEventListener('input', onSliderInput);
+    dom.brightnessSlider.addEventListener('change', saveWidgetSettings);
+
 
     // --- Initial Load ---
-    loadCharacters();
-    loadProfileSettings();
-    loadApiSettings();
-    loadWidgetSettings();
-    loadLabelSettings();
-    generateEntertainmentItems();
-    loadBackgrounds();
-    
-    // 修改：初始加载逻辑
-    if (activeCharacterId) {
-        showScreen('chat'); // 如果有激活的角色，直接进入聊天
-    } else {
-        showScreen('home'); // 否则进入角色列表让用户选择
-    }
+    const initialSetup = () => {
+        loadCharacters();
+        loadProfileSettings();
+        loadApiSettings();
+        loadWidgetSettings();
+        loadLabelSettings();
+        generateEntertainmentItems();
+        loadBackgrounds();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const startScreen = urlParams.get('start');
+        
+        showScreen(startScreen || 'chat'); 
+    };
+
+    initialSetup();
 });
