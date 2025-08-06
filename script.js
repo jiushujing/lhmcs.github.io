@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         profileSettingsScreen: document.getElementById('profile-settings-screen'),
         apiSettingsScreen: document.getElementById('api-settings-screen'),
         backgroundSettingsScreen: document.getElementById('background-settings-screen'),
+        promptsScreen: document.getElementById('prompts-screen'), // 新增
+        spaceScreen: document.getElementById('space-screen'),   // 新增
 
         // Home Screen
         characterList: document.getElementById('character-list'),
@@ -74,6 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGemini: document.getElementById('btn-gemini'),
         openaiModelsGroup: document.getElementById('openai-models'),
         geminiModelsGroup: document.getElementById('gemini-models'),
+
+        // 新增: 悬浮球 (FAB)
+        fabContainer: document.getElementById('fab-container'),
+        fabToggleBtn: document.getElementById('fab-toggle-btn'),
+        fabMenu: document.getElementById('fab-menu'),
     };
 
     let characters = [];
@@ -114,17 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Navigation & State ---
-    const updateToggleState = (screenName) => {
-        const isMyView = screenName.startsWith('my') || ['apiSettings', 'profileSettings', 'backgroundSettings'].includes(screenName);
-        document.querySelectorAll('.page-toggle-checkbox').forEach(box => box.checked = isMyView);
-        document.querySelectorAll('.toggle-thumb span').forEach(thumb => thumb.textContent = isMyView ? '🐱' : '🪷');
-    };
-
+    // 旧的 updateToggleState 函数已被移除
+    
     const showScreen = (screenName) => {
         if (isBatchDeleteMode && screenName !== 'home') exitBatchDeleteMode();
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        updateToggleState(screenName);
         
+        // 预处理
         if (screenName === 'characterDetail' && activeCharacterId) {
             const char = characters.find(c => c.id === activeCharacterId);
             dom.detailAvatar.src = char.avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -144,7 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const screenMap = {
             home: dom.homeScreen, myDashboard: dom.myDashboardScreen, characterDetail: dom.characterDetailScreen,
             characterEdit: dom.characterEditScreen, chat: dom.chatScreen, apiSettings: dom.apiSettingsScreen,
-            profileSettings: dom.profileSettingsScreen, backgroundSettings: dom.backgroundSettingsScreen
+            profileSettings: dom.profileSettingsScreen, backgroundSettings: dom.backgroundSettingsScreen,
+            prompts: dom.promptsScreen, space: dom.spaceScreen // 注册新屏幕
         };
         if (screenMap[screenName]) screenMap[screenName].classList.remove('hidden');
         if (screenName === 'home') renderCharacterList();
@@ -154,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const enterBatchDeleteMode = () => { isBatchDeleteMode = true; dom.homeScreen.classList.add('batch-delete-active'); renderCharacterList(); };
     const exitBatchDeleteMode = () => { isBatchDeleteMode = false; dom.homeScreen.classList.remove('batch-delete-active'); renderCharacterList(); };
 
-    // --- Background Settings Logic ---
+    // --- Background Settings Logic (未改变) ---
     let backgrounds = {};
     const generateEntertainmentItems = () => {
         const container = document.querySelector('.entertainment-grid-new');
@@ -194,12 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadBackgrounds = () => {
         const saved = localStorage.getItem('aiChatBackgrounds_v3');
         backgrounds = saved ? JSON.parse(saved) : {};
-        
-        // 关键修改 1: 设置API图标的默认背景
         if (!backgrounds.apiInnerCircle || !backgrounds.apiInnerCircle.url) {
             backgrounds.apiInnerCircle = { ...backgrounds.apiInnerCircle, url: 'https://sharkpan.xyz/f/wXeeHq/lantu' };
         }
-
         applyAllBackgrounds();
     };
     const updateBackgroundData = (key, newValues) => {
@@ -226,54 +227,65 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Editable Label Settings ---
+    // --- Editable Label Settings (未改变) ---
     let labelSettings = {};
-    const saveLabelSettings = () => {
-        localStorage.setItem('aiChatLabelSettings', JSON.stringify(labelSettings));
-    };
+    const saveLabelSettings = () => { localStorage.setItem('aiChatLabelSettings', JSON.stringify(labelSettings)); };
     const loadLabelSettings = () => {
         const saved = localStorage.getItem('aiChatLabelSettings');
-        // 关键修改 2: API标签默认值变为空字符串
         const defaults = { opacity: '组件透明度', brightness: '组件黑白度' };
         labelSettings = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
         Object.keys(labelSettings).forEach(key => {
             const input = document.getElementById(`label-${key}`);
-            if (input) {
-                input.value = labelSettings[key];
-            }
+            if (input) { input.value = labelSettings[key]; }
         });
     };
 
     // --- Event Listeners ---
-    document.querySelectorAll('.page-toggle-checkbox').forEach(box => {
-        box.addEventListener('change', () => showScreen(box.checked ? 'myDashboard' : 'home'));
-    });
+    // 旧的 page-toggle-checkbox 监听器已被移除
+
     document.querySelectorAll('.back-button').forEach(btn => {
         btn.addEventListener('click', () => {
             const currentScreen = btn.closest('.screen');
             if (['chat-screen', 'character-edit-screen'].includes(currentScreen.id)) { showScreen('characterDetail'); }
-            else if (['api-settings-screen', 'profile-settings-screen', 'background-settings-screen'].includes(currentScreen.id)) { showScreen('myDashboard'); }
+            else if (['api-settings-screen', 'profile-settings-screen', 'background-settings-screen', 'prompts-screen', 'space-screen'].includes(currentScreen.id)) { showScreen('myDashboard'); }
             else { showScreen('home'); }
         });
     });
 
-    // Dashboard Icon Clicks
-    dom.iconProfile.addEventListener('click', () => showScreen('profileSettings'));
-    dom.iconApi.addEventListener('click', () => showScreen('apiSettings'));
+    // (新增) 悬浮球 (FAB) 交互逻辑
+    dom.fabToggleBtn.addEventListener('click', () => {
+        dom.fabContainer.classList.toggle('active');
+    });
+
+    dom.fabMenu.addEventListener('click', (e) => {
+        const targetButton = e.target.closest('.fab-button');
+        if (targetButton) {
+            const targetScreen = targetButton.dataset.targetScreen;
+            if (targetScreen === 'chat' && !activeCharacterId) {
+                alert('请先从 🪷 角色列表选择一个角色开始聊天。');
+                showScreen('home');
+            } else {
+                showScreen(targetScreen);
+            }
+            dom.fabContainer.classList.remove('active');
+        }
+    });
+
+
+    // Dashboard Icon Clicks (移除了导航功能)
+    dom.iconProfile.addEventListener('click', () => showScreen('profileSettings')); // 保留个人资料点击
+    dom.iconApi.style.cursor = 'default'; // 移除API图标的点击手势
     dom.iconMusic.addEventListener('click', () => alert('音乐功能正在开发中！'));
     dom.iconEntertainment.addEventListener('click', (e) => {
         if (e.target.classList.contains('entertainment-swatch')) { e.stopPropagation(); alert('娱乐功能正在开发中！'); }
     });
     dom.iconSliders.addEventListener('click', (e) => e.stopPropagation());
-    
-    // 关键修改 3: 修复方形组件的点击逻辑
     dom.iconBackground.addEventListener('click', (e) => {
         if (e.target.closest('.bg-widget-bottom-left')) {
             showScreen('backgroundSettings');
         } else if (e.target.closest('.bg-widget-top') || e.target.closest('.bg-widget-bottom-right')) {
             alert('此功能待开发');
         }
-        // 移除了错误的 else 分支，点击空白区域不再有任何反应
     });
 
     // Editable Label Listener
@@ -289,13 +301,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Other listeners (unchanged)
+    // Other listeners
     dom.menuBtn.addEventListener('click', (e) => { e.stopPropagation(); dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; });
     dom.dropdownMenu.addEventListener('click', (e) => {
         const action = e.target.dataset.action;
         if (action) {
             if (action === 'batch-delete') { enterBatchDeleteMode(); }
             else if (action === 'theme') { showScreen('backgroundSettings'); }
+            else if (action === 'prompts') { showScreen('prompts'); } // 修改: 跳转到提示词页面
             else { alert(`${e.target.textContent} 功能正在开发中！`); }
         }
         dom.dropdownMenu.style.display = 'none';
@@ -330,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('确定要删除这个角色吗？此操作无法撤销。')) { characters = characters.filter(c => c.id !== activeCharacterId); saveCharacters(); activeCharacterId = null; showScreen('home'); }
     });
 
-    // Profile Settings Logic
+    // Profile Settings Logic (未改变)
     const saveProfileSettings = () => {
         const profile = { name: dom.userNameInput.value, setting: dom.userSettingInput.value, avatar: dom.profilePic.src };
         localStorage.setItem('aiChatProfile', JSON.stringify(profile));
@@ -357,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.userNameInput.addEventListener('blur', saveProfileSettings);
     dom.userSettingInput.addEventListener('blur', saveProfileSettings);
 
-    // API Settings Logic
+    // API Settings Logic (未改变)
     const defaultModels = { openai: { "gpt-3.5-turbo": "GPT-3.5-Turbo" }, gemini: { "gemini-pro": "Gemini Pro" } };
     const restoreSelection = (modelId) => { if (!modelId) return; const optionExists = Array.from(dom.modelSelect.options).some(opt => opt.value === modelId); if (optionExists) { dom.modelSelect.value = modelId; } };
     const populateModels = (models, type) => { const group = type === 'openai' ? dom.openaiModelsGroup : dom.geminiModelsGroup; group.innerHTML = ''; for (const [id, name] of Object.entries(models)) { const option = document.createElement('option'); option.value = id; option.textContent = name; group.appendChild(option); } };
@@ -430,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.apiKeyInput.addEventListener('focus', () => { dom.apiKeyInput.type = 'text'; });
     dom.apiKeyInput.addEventListener('blur', () => { dom.apiKeyInput.type = 'password'; });
 
-    // Chat Logic
+    // Chat Logic (未改变)
     const renderChatHistory = () => {
         dom.chatHistory.innerHTML = '';
         const char = characters.find(c => c.id === activeCharacterId);
@@ -503,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Widget Settings Logic
+    // Widget Settings Logic (未改变)
     const updateSliderProgress = (slider) => {
         const min = +slider.min;
         const max = +slider.max;
@@ -553,5 +566,5 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLabelSettings();
     generateEntertainmentItems();
     loadBackgrounds();
-    showScreen('home');
+    showScreen('home'); // 初始加载时显示角色列表
 });
