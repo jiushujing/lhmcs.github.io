@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     document.querySelectorAll('.back-button').forEach(btn => btn.addEventListener('click', goBack));
     
-    // Home Screen Listeners (CORRECT, STABLE VERSION)
+    // Home Screen Listeners
     dom.addCharacterBtn.addEventListener('click', () => {
         const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
         characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
