@@ -1,4 +1,4 @@
-// script.js (API Settings Restored & Enhanced)
+// script.js (THE ABSOLUTE FINAL FIX)
 
 document.addEventListener('DOMContentLoaded', () => {
     // This script should only run on app.html. If it's another page, do nothing.
@@ -8,10 +8,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dom = {
         phoneContainer: document.getElementById('phone-container'),
-        // ... (其他 dom 引用保持不变)
+        // Screens
+        homeScreen: document.getElementById('home-screen'),
+        myDashboardScreen: document.getElementById('my-dashboard-screen'),
+        characterDetailScreen: document.getElementById('character-detail-screen'),
+        characterEditScreen: document.getElementById('character-edit-screen'),
+        chatScreen: document.getElementById('chat-screen'),
+        profileSettingsScreen: document.getElementById('profile-settings-screen'),
         apiSettingsScreen: document.getElementById('api-settings-screen'),
         apiSettingsForm: document.getElementById('api-settings-form'),
-        // ...
+        backgroundSettingsScreen: document.getElementById('background-settings-screen'),
+        promptsScreen: document.getElementById('prompts-screen'),
+        spaceScreen: document.getElementById('space-screen'),
+
+        // Home Screen
+        characterList: document.getElementById('character-list'),
+        addCharacterBtn: document.getElementById('add-character-btn'),
+        menuBtn: document.getElementById('menu-btn'),
+        dropdownMenu: document.getElementById('dropdown-menu'),
+        batchDeleteHeader: document.getElementById('batch-delete-header'),
+        batchDeleteFooter: document.getElementById('batch-delete-footer'),
+        deleteSelectedBtn: document.getElementById('delete-selected-btn'),
+        cancelDeleteBtn: document.getElementById('cancel-delete-btn'),
+
+        // Character Detail Screen
+        detailAvatar: document.getElementById('detail-avatar'),
+        detailName: document.getElementById('detail-name'),
+        goToChatBtn: document.getElementById('go-to-chat-btn'),
+        goToEditBtn: document.getElementById('go-to-edit-btn'),
+
+        // Character Edit Screen
+        characterEditForm: document.getElementById('character-edit-form'),
+        
+        // Chat Screen
+        chatHeaderTitle: document.getElementById('chat-header-title'),
+        chatHistory: document.getElementById('chat-history'),
+        chatForm: document.getElementById('chat-form'),
+        chatInput: document.getElementById('chat-input'),
     };
 
     let characters = [];
@@ -29,10 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
         activeCharacterId = parseInt(sessionStorage.getItem('activeCharacterId')) || null;
     };
 
-    // --- API Config Management (MODIFIED) ---
+    // --- API Config Management ---
     const loadApiConfig = () => {
         const saved = localStorage.getItem('aiChatApiConfig');
-        // 使用深合并，确保新加入的默认配置能被正确加载
         const defaultConfig = JSON.parse(JSON.stringify(DEFAULT_API_CONFIG));
         apiConfig = saved ? { ...defaultConfig, ...JSON.parse(saved) } : defaultConfig;
     };
@@ -42,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('API 设置已保存！');
     };
 
-    // --- Rendering (MODIFIED) ---
+    // --- Rendering ---
     const renderApiSettingsForm = () => {
         const currentProvider = apiConfig.provider;
         const config = apiConfig[currentProvider];
@@ -91,12 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dom.apiSettingsForm.innerHTML = formContent;
 
-        // 为新渲染的按钮添加事件监听
         dom.apiSettingsForm.querySelectorAll('.preset-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 apiConfig.provider = e.target.dataset.provider;
-                // 切换后立即重新渲染表单
                 renderApiSettingsForm();
             });
         });
@@ -166,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     document.querySelectorAll('.back-button').forEach(btn => btn.addEventListener('click', goBack));
     
-    // Home Screen Listeners
+    // Home Screen Listeners (CORRECT, STABLE VERSION)
     dom.addCharacterBtn.addEventListener('click', () => {
         const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
         characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
@@ -190,6 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.dropdownMenu.style.display = 'none';
     });
     document.body.addEventListener('click', () => { if (dom.dropdownMenu.style.display === 'block') { dom.dropdownMenu.style.display = 'none'; } });
+    
+    // Batch delete listeners
     dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
     dom.deleteSelectedBtn.addEventListener('click', () => {
         const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
@@ -206,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
     dom.characterEditForm.addEventListener('submit', (e) => { e.preventDefault(); showScreen('characterDetail'); });
 
-    // API Settings Form Listener (MODIFIED)
+    // API Settings Form Listener
     dom.apiSettingsForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const currentProvider = apiConfig.provider;
