@@ -4,7 +4,6 @@
     --ai-msg-text: #050505;
     --widget-bg-lightness: 0%;
     --widget-bg-alpha: 0.3;
-    --fab-panel-bg: rgba(50, 50, 50, 0.85);
 }
 html, body { height: 100%; margin: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #111; display: flex; justify-content: center; align-items: center; color: var(--text-color); }
@@ -31,7 +30,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
 .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 100; width: 150px; overflow: hidden; display: none; }
 .dropdown-item { padding: 12px 15px; font-size: 14px; cursor: pointer; text-decoration: none; color: var(--text-color); display: block;}
 .dropdown-item:hover { background-color: #f0f0f0; }
-/* NEW: Divider style for dropdown menu */
 .dropdown-divider { height: 1px; margin: 8px 0; overflow: hidden; background-color: #e9ecef; }
 
 #character-list { flex-grow: 1; padding: 15px 15px 15px; display: flex; flex-direction: column; gap: 12px; background-color: transparent; }
@@ -84,13 +82,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; }
 .form-group textarea { resize: vertical; min-height: 120px; }
 
-.api-presets { display: flex; gap: 10px; margin-bottom: 20px; }
-.preset-button { flex-grow: 1; padding: 8px 12px; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--primary-bg); color: var(--text-color); border-radius: 8px; cursor: pointer; }
-.preset-button.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); }
+/* === STYLES FOR API SWITCHER BUTTONS (CORRECTLY ADDED) === */
+.api-presets { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 20px; 
+}
+.preset-button { 
+    flex-grow: 1; 
+    padding: 8px 12px; 
+    font-size: 14px; 
+    border: 1px solid var(--border-color); 
+    background-color: var(--primary-bg); 
+    color: var(--text-color); 
+    border-radius: 8px; 
+    cursor: pointer; 
+}
+.preset-button.active { 
+    background-color: var(--primary-accent); 
+    color: white; 
+    border-color: var(--primary-accent); 
+}
 
 body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; padding-top: 5vh; }
 .manual-container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); max-width: 600px; width: 90%; text-align: center; }
 .confirm-button { display: inline-block; background-color: var(--primary-accent); color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 500; transition: background-color 0.2s; }
 .confirm-button:hover { background-color: #0056b3; }
-
-/* === REMOVED: All FAB panel styles have been deleted === */
