@@ -78,31 +78,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
 #detail-name { font-size: 24px; font-weight: 600; margin-bottom: 30px; }
 
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+.form-group .label-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; } /* NEW */
+.form-group label { display: block; font-weight: 600; font-size: 14px; }
+.pull-models-btn { background-color: #e9ecef; border: none; color: #495057; font-size: 12px; padding: 4px 8px; border-radius: 6px; cursor: pointer; } /* NEW */
+.pull-models-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* NEW */
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #fff; } /* MODIFIED: Added select & background-color */
 .form-group textarea { resize: vertical; min-height: 120px; }
 
-/* === STYLES FOR API SWITCHER BUTTONS (CORRECTLY ADDED) === */
-.api-presets { 
-    display: flex; 
-    gap: 10px; 
-    margin-bottom: 20px; 
-}
-.preset-button { 
-    flex-grow: 1; 
-    padding: 8px 12px; 
-    font-size: 14px; 
-    border: 1px solid var(--border-color); 
-    background-color: var(--primary-bg); 
-    color: var(--text-color); 
-    border-radius: 8px; 
-    cursor: pointer; 
-}
-.preset-button.active { 
-    background-color: var(--primary-accent); 
-    color: white; 
-    border-color: var(--primary-accent); 
-}
+.api-presets { display: flex; gap: 10px; margin-bottom: 20px; }
+.preset-button { flex-grow: 1; padding: 8px 12px; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--primary-bg); color: var(--text-color); border-radius: 8px; cursor: pointer; }
+.preset-button.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); }
 
 body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; padding-top: 5vh; }
 .manual-container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); max-width: 600px; width: 90%; text-align: center; }
