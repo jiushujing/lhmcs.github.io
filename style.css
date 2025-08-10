@@ -1,10 +1,10 @@
+[file: style.css]
 :root { 
     --primary-bg: #ffffff; --secondary-bg: #f0f2f5; --widget-bg: #ffffff; --border-color: #e0e0e0; 
     --text-color: #1c1e21; --primary-accent: #007bff; --user-msg-bg: #0084ff; --ai-msg-bg: #e4e6eb; 
     --ai-msg-text: #050505;
     --widget-bg-lightness: 0%;
     --widget-bg-alpha: 0.3;
-    --fab-panel-bg: rgba(50, 50, 50, 0.85);
 }
 html, body { height: 100%; margin: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #111; display: flex; justify-content: center; align-items: center; color: var(--text-color); }
@@ -31,6 +31,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
 .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 100; width: 150px; overflow: hidden; display: none; }
 .dropdown-item { padding: 12px 15px; font-size: 14px; cursor: pointer; text-decoration: none; color: var(--text-color); display: block;}
 .dropdown-item:hover { background-color: #f0f0f0; }
+.dropdown-divider { height: 1px; background-color: #e9e9eb; margin: 4px 0; }
 
 #character-list { flex-grow: 1; padding: 15px 15px 15px; display: flex; flex-direction: column; gap: 12px; background-color: transparent; }
 .character-card { display: flex; align-items: center; padding: 15px; cursor: pointer; background-color: var(--primary-bg); border-radius: 16px; border: 1px solid #e9e9eb; }
@@ -90,103 +91,3 @@ body.manual-body { background: #f0f2f5; color: #333; align-items: flex-start; pa
 .manual-container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); max-width: 600px; width: 90%; text-align: center; }
 .confirm-button { display: inline-block; background-color: var(--primary-accent); color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 500; transition: background-color 0.2s; }
 .confirm-button:hover { background-color: #0056b3; }
-
-/* === 新悬浮球面板样式 === */
-#fab-wrapper {
-    position: absolute;
-    bottom: 50px;
-    right: 20px;
-    z-index: 1000;
-    width: 48px;
-    height: 48px;
-    transition: left 0.3s ease-out, right 0.3s ease-out, top 0.3s ease-out, bottom 0.3s ease-out;
-}
-#fab-wrapper.dragging {
-    transition: none;
-}
-#fab-toggle-btn {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-color: var(--fab-panel-bg);
-    color: white;
-    font-size: 24px;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    cursor: grab;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.3s ease;
-}
-#fab-wrapper.dragging #fab-toggle-btn, #fab-toggle-btn:active {
-    cursor: grabbing;
-    transform: scale(1.1);
-}
-#fab-panel-container {
-    position: absolute;
-    /* JS会设置top和left */
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.8);
-    transform-origin: center;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-#fab-panel-container:not(.hidden) {
-    opacity: 1;
-    pointer-events: auto;
-    transform: scale(1);
-}
-.fab-panel {
-    background-color: var(--fab-panel-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 24px;
-    padding: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-}
-#fab-panel-top {
-    display: flex;
-    justify-content: space-around;
-    gap: 16px;
-    padding: 12px 20px;
-}
-#fab-panel-bottom {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-}
-.panel-button {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    padding: 5px;
-    border-radius: 8px;
-    transition: background-color 0.2s;
-}
-.panel-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.panel-button .icon {
-    font-size: 24px;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.panel-button .label {
-    font-size: 11px;
-    font-weight: 500;
-}
-.panel-button[data-action="back"] .icon {
-    font-weight: bold;
-}
