@@ -50,20 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isBatchDeleteMode = false;
     let screenHistory = [];
 
-    // A map to easily get screen elements by name
-    const screenMap = {
-        home: dom.homeScreen,
-        myDashboard: dom.myDashboardScreen,
-        characterDetail: dom.characterDetailScreen,
-        characterEdit: dom.characterEditScreen,
-        chat: dom.chatScreen,
-        apiSettings: dom.apiSettingsScreen,
-        profileSettings: dom.profileSettingsScreen,
-        backgroundSettings: dom.backgroundSettingsScreen,
-        prompts: dom.promptsScreen,
-        space: dom.spaceScreen
-    };
-
     // --- Data Management ---
     const saveCharacters = () => localStorage.setItem('aiChatCharacters', JSON.stringify(characters));
     const loadCharacters = () => {
@@ -97,39 +83,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- Navigation & State ---
-    const showScreen = (screenName, isGoingBack = false) => {
-        if (!screenName || !screenMap[screenName]) {
-            console.error("Screen not found:", screenName);
-            return;
-        }
+    const showScreen = (screenName) => {
+        if (!screenName) return;
         
-        if (isBatchDeleteMode && screenName !== 'home') {
-            exitBatchDeleteMode();
-        }
+        if (isBatchDeleteMode && screenName !== 'home') exitBatchDeleteMode();
         
-        if (!isGoingBack) {
-            const currentScreen = screenHistory.length > 0 ? screenHistory[screenHistory.length - 1] : null;
-            if (screenName !== currentScreen) {
-                screenHistory.push(screenName);
-                if (screenHistory.length > 10) screenHistory.shift();
-            }
+        const currentScreen = screenHistory.length > 0 ? screenHistory[screenHistory.length - 1] : null;
+        if (screenName !== currentScreen) {
+            screenHistory.push(screenName);
+            if (screenHistory.length > 10) screenHistory.shift();
         }
 
-        Object.values(screenMap).forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         
-        screenMap[screenName].classList.remove('hidden');
+        const screenMap = {
+            home: dom.homeScreen, myDashboard: dom.myDashboardScreen, characterDetail: dom.characterDetailScreen,
+            characterEdit: dom.characterEditScreen, chat: dom.chatScreen, apiSettings: dom.apiSettingsScreen,
+            profileSettings: dom.profileSettingsScreen, backgroundSettings: dom.backgroundSettingsScreen,
+            prompts: dom.promptsScreen, space: dom.spaceScreen
+        };
+        if (screenMap[screenName]) screenMap[screenName].classList.remove('hidden');
+        if (screenName === 'home') renderCharacterList();
         
-        if (screenName === 'home') {
-            renderCharacterList();
-        }
-        // Add other screen-specific rendering logic here if needed
+        // 其他页面的渲染逻辑可以按需添加在这里
+        // 例如：if (screenName === 'myDashboard') { renderDashboard(); }
     };
 
     const goBack = () => {
         if (screenHistory.length > 1) {
             screenHistory.pop();
-            const previousScreenName = screenHistory[screenHistory.length - 1];
-            showScreen(previousScreenName, true); // Use showScreen to navigate back
+            const previousScreen = screenHistory[screenHistory.length - 1];
+            // 直接显示上一个屏幕，不再次推入历史记录
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            const screenElement = document.getElementById(`${previousScreen}-screen`);
+            if (screenElement) {
+                screenElement.classList.remove('hidden');
+            }
         }
     };
 
@@ -142,10 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', goBack);
     });
     
-    // Home Screen Listeners
-    dom.menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    // Other listeners (Home Screen)
+    dom.menuBtn.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; 
     });
 
     dom.dropdownMenu.addEventListener('click', (e) => {
@@ -161,53 +150,47 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen(targetScreen);
         }
         
-        if (!target.href) {
+        // 无论点击了什么，都关闭菜单 (除非是需要新窗口打开的链接)
+        if (!target.href || target.target !== '_blank') {
             dom.dropdownMenu.style.display = 'none';
         }
     });
 
-    document.body.addEventListener('click', () => {
-        if (dom.dropdownMenu.style.display === 'block') {
-            dom.dropdownMenu.style.display = 'none';
-        }
+    document.body.addEventListener('click', () => { 
+        if(dom.dropdownMenu.style.display === 'block') dom.dropdownMenu.style.display = 'none'; 
     });
 
     dom.addCharacterBtn.addEventListener('click', () => {
         const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
-        characters.push(newChar);
-        saveCharacters();
-        activeCharacterId = newChar.id;
-        showScreen('characterEdit');
+        characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
     });
 
     dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
+    
     dom.deleteSelectedBtn.addEventListener('click', () => {
         const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            alert('请至少选择一个要删除的角色。');
-            return;
-        }
+        if (selectedCheckboxes.length === 0) { alert('请至少选择一个要删除的角色。'); return; }
         if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 个角色吗？`)) {
             const idsToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
             characters = characters.filter(char => !idsToDelete.includes(char.id));
-            saveCharacters();
-            exitBatchDeleteMode();
+            saveCharacters(); exitBatchDeleteMode();
         }
     });
 
-    // Character Detail & Edit Listeners
+    // Other listeners (Character Detail & Edit)
     dom.goToChatBtn.addEventListener('click', () => showScreen('chat'));
     dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
     dom.characterEditForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        // ... form submission logic will be added here ...
-        alert("保存功能待实现"); // Placeholder
-        goBack(); // Go back instead of directly to detail
+        // ... form submission logic ...
+        showScreen('characterDetail');
     });
 
     // --- Initial Load ---
     const initialSetup = () => {
         loadCharacters();
+        // ... any other loading functions ...
+        
         const urlParams = new URLSearchParams(window.location.search);
         const startScreen = urlParams.get('start');
         showScreen(startScreen || 'home'); 
