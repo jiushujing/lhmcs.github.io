@@ -1,4 +1,3 @@
-[file: app.html]
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -19,14 +18,17 @@
                     <div class="header-actions">
                         <button id="add-character-btn" class="header-button">+</button>
                         <button id="menu-btn" class="header-menu-button"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
+                        <!-- Dropdown Menu (MODIFIED) -->
                         <div id="dropdown-menu" class="dropdown-menu">
                             <a href="index.html" target="_blank" class="dropdown-item">说明书</a>
-                            <div class="dropdown-item" data-action="batch-delete">批量删除</div>
                             <div class="dropdown-divider"></div>
-                            <div class="dropdown-item" data-target-screen="myDashboard">桌面</div>
+                            <div class="dropdown-item" data-target-screen="myDashboard">我的桌面</div>
                             <div class="dropdown-item" data-target-screen="apiSettings">API 设定</div>
-                            <div class="dropdown-item" data-target-screen="space">空间</div>
                             <div class="dropdown-item" data-target-screen="prompts">提示词</div>
+                            <div class="dropdown-item" data-target-screen="space">空间</div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item" data-action="batch-delete">批量删除</div>
+                            <div class="dropdown-item" data-action="back">返回上一页</div>
                         </div>
                     </div>
                 </div>
@@ -108,6 +110,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAB has been removed -->
+
     </div>
     
     <script src="config.js"></script>
