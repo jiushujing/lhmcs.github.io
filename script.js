@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatScreen: document.getElementById('chat-screen'),
         profileSettingsScreen: document.getElementById('profile-settings-screen'),
         apiSettingsScreen: document.getElementById('api-settings-screen'),
-        apiSettingsForm: document.getElementById('api-settings-form'), // Modified
+        apiSettingsForm: document.getElementById('api-settings-form'),
         backgroundSettingsScreen: document.getElementById('background-settings-screen'),
         promptsScreen: document.getElementById('prompts-screen'),
         spaceScreen: document.getElementById('space-screen'),
@@ -46,14 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chatForm: document.getElementById('chat-form'),
         chatInput: document.getElementById('chat-input'),
         
-        // 悬浮球 (FAB)
-        fabWrapper: document.getElementById('fab-wrapper'),
-        fabToggleBtn: document.getElementById('fab-toggle-btn'),
-        fabPanelContainer: document.getElementById('fab-panel-container'),
+        // REMOVED: FAB DOM elements
     };
 
     let characters = [];
-    let apiConfig = {}; // Modified
+    let apiConfig = {};
     let activeCharacterId = null;
     let isBatchDeleteMode = false;
     let screenHistory = [];
@@ -67,14 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         activeCharacterId = parseInt(sessionStorage.getItem('activeCharacterId')) || null;
     };
 
-    // --- API Config Management (NEW) ---
+    // --- API Config Management ---
     const loadApiConfig = () => {
         const saved = localStorage.getItem('aiChatApiConfig');
         if (saved) {
-            // 如果有保存的配置，则加载它
             apiConfig = JSON.parse(saved);
         } else {
-            // 否则，使用 config.js 中的默认配置 (进行深拷贝以防意外修改)
             apiConfig = JSON.parse(JSON.stringify(DEFAULT_API_CONFIG));
         }
     };
@@ -86,10 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Rendering ---
     const renderApiSettingsForm = () => {
-        // 获取当前选定的服务商配置，例如 'openai'
         const currentProvider = apiConfig.provider;
         const config = apiConfig[currentProvider];
-
         dom.apiSettingsForm.innerHTML = `
             <div class="form-group">
                 <label for="api-base-url">API Base URL</label>
@@ -154,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (screenMap[screenName]) screenMap[screenName].classList.remove('hidden');
         if (screenName === 'home') renderCharacterList();
         
-        // Modified
         if (screenName === 'apiSettings') {
             renderApiSettingsForm();
         }
@@ -164,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (screenHistory.length > 1) {
             screenHistory.pop();
             const previousScreen = screenHistory[screenHistory.length - 1];
-            // 直接显示上一个屏幕，不再次推入历史记录
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             const screenElement = document.getElementById(`${previousScreen}-screen`);
             if (screenElement) {
@@ -182,125 +173,51 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', goBack);
     });
     
-    // --- Draggable FAB & Panel Logic (FIXED) ---
-    let isDragging = false;
-    let wasDragged = false;
-    let startX, startY;
-    let initialFabX, initialFabY;
-    const dragThreshold = 5;
+    // REMOVED: All Draggable FAB & Panel Logic has been deleted.
 
-    const onPointerDown = (e) => {
-        if (e.target.closest('.panel-button')) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        
-        isDragging = true;
-        wasDragged = false;
-        
-        const currentPointer = e.touches ? e.touches[0] : e;
-        startX = currentPointer.clientX;
-        startY = currentPointer.clientY;
-        
-        const fabRect = dom.fabWrapper.getBoundingClientRect();
-        const containerRect = dom.phoneContainer.getBoundingClientRect();
-        initialFabX = fabRect.left - containerRect.left;
-        initialFabY = fabRect.top - containerRect.top;
+    // --- Home Screen Listeners (MODIFIED) ---
+    dom.menuBtn.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; 
+    });
 
-        dom.fabWrapper.classList.add('dragging');
-        e.preventDefault();
+    dom.dropdownMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.dropdown-item');
+        if (!item) return;
 
-        window.addEventListener('pointermove', onPointerMove, { passive: false });
-        window.addEventListener('pointerup', onPointerUp);
-    };
-
-    const onPointerMove = (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-
-        const currentPointer = e.touches ? e.touches[0] : e;
-        const dx = currentPointer.clientX - startX;
-        const dy = currentPointer.clientY - startY;
-
-        if (!wasDragged && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
-            wasDragged = true;
-            dom.fabPanelContainer.classList.add('hidden');
-        }
-        
-        if (wasDragged) {
-            let newX = initialFabX + dx;
-            let newY = initialFabY + dy;
-
-            const containerRect = dom.phoneContainer.getBoundingClientRect();
-            const fabRect = dom.fabWrapper.getBoundingClientRect();
-            
-            newX = Math.max(0, Math.min(newX, containerRect.width - fabRect.width));
-            newY = Math.max(0, Math.min(newY, containerRect.height - fabRect.height));
-
-            dom.fabWrapper.style.left = `${newX}px`;
-            dom.fabWrapper.style.top = `${newY}px`;
-            dom.fabWrapper.style.right = 'auto';
-            dom.fabWrapper.style.bottom = 'auto';
-        }
-    };
-
-    const onPointerUp = () => {
-        if (!isDragging) return;
-        isDragging = false;
-
-        dom.fabWrapper.classList.remove('dragging');
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
-
-        if (wasDragged) {
-            const containerWidth = dom.phoneContainer.clientWidth;
-            const fabCenter = dom.fabWrapper.offsetLeft + dom.fabWrapper.offsetWidth / 2;
-            dom.fabWrapper.style.left = (fabCenter < containerWidth / 2) ? '20px' : 'auto';
-            dom.fabWrapper.style.right = (fabCenter < containerWidth / 2) ? 'auto' : '20px';
-        } else {
-            // Click action: Toggle panel
-            const panel = dom.fabPanelContainer;
-            const isHidden = panel.classList.toggle('hidden');
-            if (!isHidden) {
-                const fabRect = dom.fabWrapper.getBoundingClientRect();
-                const panelRect = panel.getBoundingClientRect();
-                panel.style.left = `${fabRect.width / 2 - panelRect.width / 2}px`;
-                panel.style.top = `${fabRect.height / 2 - panelRect.height / 2}px`;
-            }
-        }
-    };
-
-    dom.fabWrapper.addEventListener('pointerdown', onPointerDown);
-
-    dom.fabPanelContainer.addEventListener('click', (e) => {
-        const button = e.target.closest('.panel-button');
-        if (!button) return;
-        
-        const targetScreen = button.dataset.targetScreen;
-        const action = button.dataset.action;
+        const targetScreen = item.dataset.targetScreen;
+        const action = item.dataset.action;
 
         if (targetScreen) {
             showScreen(targetScreen);
-        } else if (action === 'back') {
-            goBack();
-        } else {
-            alert('该功能正在快马加鞭地开发中...');
+        } else if (action) {
+            switch (action) {
+                case 'batch-delete':
+                    enterBatchDeleteMode();
+                    break;
+                case 'back':
+                    goBack();
+                    break;
+                default:
+                    // For other potential actions
+                    break;
+            }
         }
         
-        dom.fabPanelContainer.classList.add('hidden');
+        dom.dropdownMenu.style.display = 'none'; // Hide menu after any action
     });
 
-    // Other listeners (Home Screen)
-    dom.menuBtn.addEventListener('click', (e) => { e.stopPropagation(); dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; });
-    dom.dropdownMenu.addEventListener('click', (e) => {
-        const action = e.target.dataset.action;
-        if (action === 'batch-delete') enterBatchDeleteMode();
-        dom.dropdownMenu.style.display = 'none';
+    document.body.addEventListener('click', () => { 
+        if(dom.dropdownMenu.style.display === 'block') dom.dropdownMenu.style.display = 'none'; 
     });
-    document.body.addEventListener('click', () => { if(dom.dropdownMenu.style.display === 'block') dom.dropdownMenu.style.display = 'none'; });
+
     dom.addCharacterBtn.addEventListener('click', () => {
         const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
         characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
     });
+
     dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
+
     dom.deleteSelectedBtn.addEventListener('click', () => {
         const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
         if (selectedCheckboxes.length === 0) { alert('请至少选择一个要删除的角色。'); return; }
@@ -311,37 +228,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Other listeners (Character Detail & Edit)
+    // --- Other Screen Listeners ---
     dom.goToChatBtn.addEventListener('click', () => showScreen('chat'));
     dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
+
     dom.characterEditForm.addEventListener('submit', (e) => {
         e.preventDefault();
         // ... form submission logic ...
         showScreen('characterDetail');
     });
 
-    // --- API Settings Form Listener (NEW) ---
     dom.apiSettingsForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
         const currentProvider = apiConfig.provider;
-        
-        // 从表单获取最新值
         apiConfig[currentProvider].baseUrl = document.getElementById('api-base-url').value.trim();
         apiConfig[currentProvider].apiKey = document.getElementById('api-key').value.trim();
         apiConfig[currentProvider].model = document.getElementById('api-model').value.trim();
-
-        // 保存配置
         saveApiConfig();
-
-        // 保存后返回上一页
         goBack();
     });
 
     // --- Initial Load ---
     const initialSetup = () => {
         loadCharacters();
-        loadApiConfig(); // Modified
+        loadApiConfig();
         
         const urlParams = new URLSearchParams(window.location.search);
         const startScreen = urlParams.get('start');
