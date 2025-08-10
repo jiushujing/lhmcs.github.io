@@ -1,4 +1,4 @@
-// script.js
+// script.js (FIXED)
 
 document.addEventListener('DOMContentLoaded', () => {
     // This script should only run on app.html. If it's another page, do nothing.
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         spaceScreen: document.getElementById('space-screen'),
 
         // Home Screen
+        headerActions: document.querySelector('.header-actions'), // NEW: For event delegation
         characterList: document.getElementById('character-list'),
         addCharacterBtn: document.getElementById('add-character-btn'),
         menuBtn: document.getElementById('menu-btn'),
@@ -45,8 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatHistory: document.getElementById('chat-history'),
         chatForm: document.getElementById('chat-form'),
         chatInput: document.getElementById('chat-input'),
-        
-        // REMOVED: FAB DOM elements
     };
 
     let characters = [];
@@ -173,14 +172,28 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', goBack);
     });
     
-    // REMOVED: All Draggable FAB & Panel Logic has been deleted.
+    // --- Home Screen Listeners (REFACTORED & FIXED) ---
+    // Use event delegation on the header actions container
+    dom.headerActions.addEventListener('click', (e) => {
+        // Check if the "Add" button was clicked
+        if (e.target.closest('#add-character-btn')) {
+            const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
+            characters.push(newChar);
+            saveCharacters();
+            activeCharacterId = newChar.id;
+            showScreen('characterEdit');
+            return;
+        }
 
-    // --- Home Screen Listeners (MODIFIED) ---
-    dom.menuBtn.addEventListener('click', (e) => { 
-        e.stopPropagation(); 
-        dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block'; 
+        // Check if the "Menu" button was clicked
+        if (e.target.closest('#menu-btn')) {
+            e.stopPropagation(); // Prevent body click from closing it immediately
+            dom.dropdownMenu.style.display = dom.dropdownMenu.style.display === 'block' ? 'none' : 'block';
+            return;
+        }
     });
 
+    // Listener for the dropdown menu itself
     dom.dropdownMenu.addEventListener('click', (e) => {
         const item = e.target.closest('.dropdown-item');
         if (!item) return;
@@ -199,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     goBack();
                     break;
                 default:
-                    // For other potential actions
                     break;
             }
         }
@@ -207,56 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.dropdownMenu.style.display = 'none'; // Hide menu after any action
     });
 
+    // Listener to close dropdown when clicking outside
     document.body.addEventListener('click', () => { 
-        if(dom.dropdownMenu.style.display === 'block') dom.dropdownMenu.style.display = 'none'; 
-    });
-
-    dom.addCharacterBtn.addEventListener('click', () => {
-        const newChar = { id: Date.now(), name: 'New Character', subtitle: '', setting: '', avatar: '', history: [] };
-        characters.push(newChar); saveCharacters(); activeCharacterId = newChar.id; showScreen('characterEdit');
-    });
-
-    dom.cancelDeleteBtn.addEventListener('click', exitBatchDeleteMode);
-
-    dom.deleteSelectedBtn.addEventListener('click', () => {
-        const selectedCheckboxes = dom.characterList.querySelectorAll('.batch-delete-checkbox:checked');
-        if (selectedCheckboxes.length === 0) { alert('请至少选择一个要删除的角色。'); return; }
-        if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 个角色吗？`)) {
-            const idsToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
-            characters = characters.filter(char => !idsToDelete.includes(char.id));
-            saveCharacters(); exitBatchDeleteMode();
-        }
-    });
-
-    // --- Other Screen Listeners ---
-    dom.goToChatBtn.addEventListener('click', () => showScreen('chat'));
-    dom.goToEditBtn.addEventListener('click', () => showScreen('characterEdit'));
-
-    dom.characterEditForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        // ... form submission logic ...
-        showScreen('characterDetail');
-    });
-
-    dom.apiSettingsForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const currentProvider = apiConfig.provider;
-        apiConfig[currentProvider].baseUrl = document.getElementById('api-base-url').value.trim();
-        apiConfig[currentProvider].apiKey = document.getElementById('api-key').value.trim();
-        apiConfig[currentProvider].model = document.getElementById('api-model').value.trim();
-        saveApiConfig();
-        goBack();
-    });
-
-    // --- Initial Load ---
-    const initialSetup = () => {
-        loadCharacters();
-        loadApiConfig();
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const startScreen = urlParams.get('start');
-        showScreen(startScreen || 'home'); 
-    };
-
-    initialSetup();
-});
+        if
