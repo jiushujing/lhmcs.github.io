@@ -1,5 +1,3 @@
-// script.js (THE ABSOLUTE FINAL FIX)
-
 document.addEventListener('DOMContentLoaded', () => {
     // This script should only run on app.html. If it's another page, do nothing.
     if (!document.getElementById('phone-container')) {
